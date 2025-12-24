@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import Header from './components/Header';
-import ParkCard from './components/ParkCard';
-import ParkDetail from './components/ParkDetail';
-import GeminiConcierge from './components/GeminiConcierge';
-import { PARKS } from './constants';
-import { View, Park } from './types';
+import Header from './components/Header.tsx';
+import ParkCard from './components/ParkCard.tsx';
+import ParkDetail from './components/ParkDetail.tsx';
+import GeminiConcierge from './components/GeminiConcierge.tsx';
+import { PARKS } from './constants.ts';
+import { View, Park } from './types.ts';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('home');

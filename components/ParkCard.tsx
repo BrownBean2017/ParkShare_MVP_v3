@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Park } from '../types';
+import { Park } from '../types.ts';
 
 interface ParkCardProps {
   park: Park;

@@ -8,6 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Shim process.env to prevent ReferenceErrors before the app loads
+      window.process = { env: { API_KEY: "" } };
+      window.addEventListener('error', function(e) {
+        console.error('Global error caught:', e.message);
+      });
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         #root { min-height: 100vh; }
@@ -47,7 +54,7 @@
     <div id="root">
         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: #4f46e5; margin-bottom: 1rem;"></i>
-            <p style="color: #64748b; font-weight: 500;">Starting ParkShare Engine...</p>
+            <p style="color: #64748b; font-weight: 500;">Initializing ParkShare...</p>
         </div>
     </div>
     <script type="module" src="index.tsx"></script>

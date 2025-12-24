@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { getParkRecommendations } from '../services/gemini';
-import { PARKS } from '../constants';
+import { getParkRecommendations } from '../services/gemini.ts';
+import { PARKS } from '../constants.ts';
 
 interface GeminiConciergeProps {
   onSelectPark: (id: string) => void;

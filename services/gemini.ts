@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { PARKS } from "../constants";
+import { PARKS } from "../constants.ts";
 
 export const getParkRecommendations = async (userQuery: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });

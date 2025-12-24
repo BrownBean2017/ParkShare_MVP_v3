@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Park } from '../types';
+import { Park } from '../types.ts';
 
 interface ParkDetailProps {
   park: Park;
