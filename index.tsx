@@ -3,6 +3,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
+console.log("Entry point index.tsx started loading...");
+
 const container = document.getElementById('root');
 
 if (container) {

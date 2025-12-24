@@ -1,5 +1,5 @@
 
-import { Park } from './types';
+import { Park } from './types.ts';
 
 export const PARKS: Park[] = [
   {
