@@ -1,0 +1,7 @@
+{
+  "name": "ParkShare",
+  "description": "The community-driven marketplace for car parking spaces. Rent out your driveway or find the perfect spot for your vehicle.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
