@@ -9,51 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // Shim process.env to prevent ReferenceErrors
+      // Shim process.env for the Gemini SDK
       window.process = { env: { API_KEY: "" } };
-      
-      // Global error handler to catch and display loading errors on the UI
-      window.addEventListener('error', function(event) {
-        console.error('Captured Error:', event);
-        const root = document.getElementById('root');
-        if (root && (root.innerText.includes('Initializing') || root.innerText.trim() === '')) {
-          root.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; font-family: sans-serif;">
-              <h1 style="color: #ef4444; margin-bottom: 10px;">Startup Error</h1>
-              <p style="color: #64748b; margin-bottom: 20px;">The app failed to load. This is usually due to a module resolution issue.</p>
-              <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 13px; text-align: left; max-width: 600px; width: 100%; overflow: auto; border: 1px solid #e2e8f0;">
-                <code style="color: #be123c;">${event.message || 'Check console for details'}</code>
-                <div style="margin-top: 10px; color: #475569; font-size: 11px;">Source: ${event.filename || 'unknown'}:${event.lineno || '0'}</div>
-              </div>
-              <button onclick="location.reload()" style="margin-top: 20px; background: #4f46e5; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600;">Retry Load</button>
-            </div>
-          `;
-        }
-      });
-      window.addEventListener('unhandledrejection', function(event) {
-        console.error('Unhandled Promise Rejection:', event.reason);
-      });
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         #root { min-height: 100vh; }
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-        }
-        .park-card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .park-card-hover:hover {
-            transform: translateY(-6px);
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
     </style>
     <script type="importmap">
 {
@@ -73,7 +37,7 @@
     <div id="root">
         <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: #4f46e5; margin-bottom: 1rem;"></i>
-            <p style="color: #64748b; font-weight: 500;">Initializing ParkShare...</p>
+            <p style="color: #64748b; font-weight: 500;">Starting ParkShare MVP...</p>
         </div>
     </div>
     <script type="module" src="index.tsx"></script>

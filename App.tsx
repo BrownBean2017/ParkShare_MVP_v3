@@ -1,190 +1,142 @@
 
 import React, { useState, useMemo } from 'react';
-import Header from './components/Header.tsx';
-import ParkCard from './components/ParkCard.tsx';
-import ParkDetail from './components/ParkDetail.tsx';
-import GeminiConcierge from './components/GeminiConcierge.tsx';
 import { PARKS } from './constants.ts';
-import { View, Park } from './types.ts';
+import { Park, View } from './types.ts';
+import { getParkRecommendations } from './services/gemini.ts';
+
+// --- Components ---
+
+const Header: React.FC<{ onGoHome: () => void }> = ({ onGoHome }) => (
+  <header className="sticky top-0 z-50 glass-nav border-b border-slate-200">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-16">
+        <div className="flex items-center cursor-pointer group" onClick={onGoHome}>
+          <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white mr-3 group-hover:bg-indigo-700 transition-colors">
+            <i className="fas fa-square-p text-xl"></i>
+          </div>
+          <span className="text-2xl font-bold text-slate-800 tracking-tight">ParkShare_MVP_v3</span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">GHBanner</span>
+          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-500">
+            <i className="fas fa-user text-sm"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+);
+
+const ParkCard: React.FC<{ park: Park; onClick: (id: string) => void }> = ({ park, onClick }) => (
+  <div 
+    className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-slate-100 cursor-pointer group"
+    onClick={() => onClick(park.id)}
+  >
+    <div className="relative aspect-[4/3] overflow-hidden">
+      <img src={park.images[0]} alt={park.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <div className="absolute bottom-3 left-3 bg-indigo-600/90 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">
+        {park.category}
+      </div>
+    </div>
+    <div className="p-4">
+      <div className="flex justify-between items-start">
+        <h3 className="font-bold text-slate-900 truncate">{park.name}</h3>
+        <span className="text-sm font-medium"><i className="fas fa-star text-yellow-400 mr-1"></i>{park.rating}</span>
+      </div>
+      <p className="text-slate-500 text-sm mt-1">{park.location}</p>
+      <div className="mt-3 flex justify-between items-center">
+        <span className="font-bold text-lg text-slate-900">${park.pricePerHour}<span className="text-slate-500 text-xs font-normal">/hr</span></span>
+        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{park.vehicleSize}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const ParkDetail: React.FC<{ park: Park; onBack: () => void }> = ({ park, onBack }) => {
+  const [booked, setBooked] = useState(false);
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <button onClick={onBack} className="mb-6 text-slate-500 hover:text-indigo-600 flex items-center">
+        <i className="fas fa-arrow-left mr-2"></i> Back
+      </button>
+      <img src={park.images[0]} className="w-full h-64 object-cover rounded-3xl mb-6 shadow-xl" />
+      <h1 className="text-3xl font-bold mb-2">{park.name}</h1>
+      <p className="text-slate-500 mb-6">{park.location} · {park.security}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
+          <h2 className="text-xl font-bold mb-4">Description</h2>
+          <p className="text-slate-600 leading-relaxed mb-8">{park.description}</p>
+          <h2 className="text-xl font-bold mb-4">Amenities</h2>
+          <div className="flex flex-wrap gap-2">
+            {park.amenities.map(a => (
+              <span key={a} className="bg-slate-100 px-3 py-1 rounded-full text-sm">{a}</span>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white p-6 border border-slate-200 rounded-3xl shadow-xl h-fit">
+          <div className="text-2xl font-bold mb-4">${park.pricePerHour}/hr</div>
+          <button 
+            onClick={() => setBooked(true)}
+            className={`w-full py-3 rounded-xl font-bold text-white transition-all ${booked ? 'bg-green-500' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+          >
+            {booked ? 'Reserved!' : 'Book Now'}
+          </button>
+          <p className="text-xs text-slate-400 text-center mt-4">No hidden fees · Free cancellation</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main App ---
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>('home');
-  const [selectedParkId, setSelectedParkId] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const categories = ['All', 'Driveway', 'Garage', 'Lot', 'Underground'];
+  const selectedPark = useMemo(() => PARKS.find(p => p.id === selectedId), [selectedId]);
 
-  const filteredParks = useMemo(() => {
-    if (activeCategory === 'All') return PARKS;
-    return PARKS.filter(p => p.category === activeCategory);
-  }, [activeCategory]);
-
-  const selectedPark = useMemo(() => {
-    return PARKS.find(p => p.id === selectedParkId) || null;
-  }, [selectedParkId]);
-
-  const handleSelectPark = (id: string) => {
-    setSelectedParkId(id);
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
     setView('park-detail');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const goHome = () => {
-    setView('home');
-    setSelectedParkId(null);
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <Header onGoHome={goHome} />
+    <div className="min-h-screen bg-slate-50">
+      <Header onGoHome={() => setView('home')} />
+      
+      {view === 'home' ? (
+        <>
+          <section className="bg-indigo-900 text-white py-20 px-4 text-center">
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">Built with AI Studio</h1>
+              <p className="text-xl md:text-2xl text-indigo-200 mb-8 font-medium">
+                The fastest path from prompt to production with Gemini.
+              </p>
+              <button 
+                className="bg-white text-indigo-900 px-8 py-3 rounded-full font-bold text-lg hover:shadow-2xl transition-all"
+                onClick={() => document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Start building
+              </button>
+            </div>
+          </section>
 
-      <main className="flex-grow">
-        {view === 'home' ? (
-          <>
-            {/* Hero Section */}
-            <section className="relative h-[450px] flex items-center justify-center bg-slate-900 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1545179605-1296651e9d43?auto=format&fit=crop&w=1920&q=80" 
-                className="absolute inset-0 w-full h-full object-cover opacity-50"
-                alt="Urban parking garage"
-              />
-              <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-                <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight drop-shadow-lg">
-                  Stop Circling. <br/><span className="text-indigo-400">Start Parking.</span>
-                </h1>
-                <p className="text-xl md:text-2xl text-slate-200 mb-8 font-medium max-w-2xl mx-auto">
-                  Reserve private driveways, secure garages, and affordable lots in seconds.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                   <div className="bg-white p-1 rounded-2xl shadow-2xl flex items-center w-full max-w-md">
-                     <i className="fas fa-location-arrow text-slate-400 ml-4 mr-2"></i>
-                     <input type="text" placeholder="Where are you going?" className="flex-grow py-3 px-2 outline-none text-slate-800" />
-                     <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all">
-                       Search
-                     </button>
-                   </div>
-                </div>
-              </div>
-            </section>
+          <section id="listings" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 className="text-2xl font-bold text-slate-900 mb-8">Nearby Available Spots</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {PARKS.map(park => (
+                <ParkCard key={park.id} park={park} onClick={handleSelect} />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        selectedPark && <ParkDetail park={selectedPark} onBack={() => setView('home')} />
+      )}
 
-            {/* Category Filter */}
-            <div className="sticky top-16 z-40 bg-white border-b border-slate-200 py-4 shadow-sm">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex space-x-10 overflow-x-auto no-scrollbar pb-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className={`flex flex-col items-center space-y-2 whitespace-nowrap pb-2 border-b-2 transition-all ${
-                        activeCategory === cat 
-                          ? 'border-indigo-600 text-indigo-700 opacity-100' 
-                          : 'border-transparent text-slate-400 opacity-60 hover:opacity-100 hover:text-slate-600'
-                      }`}
-                    >
-                      <i className={`fas fa-${
-                        cat === 'All' ? 'globe' : 
-                        cat === 'Driveway' ? 'house' : 
-                        cat === 'Garage' ? 'warehouse' : 
-                        cat === 'Lot' ? 'square' : 'building-columns'
-                      } text-lg`}></i>
-                      <span className="text-[10px] font-bold uppercase tracking-widest">{cat}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Park Grid */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <div className="flex justify-between items-center mb-10">
-                <div>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Available Spots</h2>
-                  <p className="text-slate-500 mt-1">Verified parking in top urban locations.</p>
-                </div>
-                <button className="flex items-center space-x-2 border border-slate-300 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
-                  <i className="fas fa-sliders text-slate-400"></i>
-                  <span>Filters</span>
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {filteredParks.map((park) => (
-                  <ParkCard 
-                    key={park.id} 
-                    park={park} 
-                    onClick={handleSelectPark} 
-                  />
-                ))}
-              </div>
-            </section>
-          </>
-        ) : (
-          selectedPark && (
-            <ParkDetail 
-              park={selectedPark} 
-              onBack={goHome} 
-            />
-          )
-        )}
-      </main>
-
-      {/* AI Assistant */}
-      <GeminiConcierge onSelectPark={handleSelectPark} />
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div>
-              <h4 className="font-bold text-slate-900 mb-4">Drivers</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-indigo-600">Help Center</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Parking safety</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Vehicle guidelines</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-4">Owners</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-indigo-600">List your driveway</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Liability coverage</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Owner resources</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-4">ParkShare</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-indigo-600">About us</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Careers</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Press</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-4">Connect</h4>
-              <div className="flex space-x-4">
-                <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-indigo-600 hover:text-white transition-all"><i className="fab fa-twitter"></i></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-indigo-600 hover:text-white transition-all"><i className="fab fa-facebook-f"></i></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-indigo-600 hover:text-white transition-all"><i className="fab fa-instagram"></i></a>
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 font-medium">
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <div className="flex items-center space-x-1 text-indigo-600">
-                <i className="fas fa-square-p"></i>
-                <span className="font-bold">ParkShare</span>
-              </div>
-              <span>© 2025 ParkShare Global</span>
-              <span>·</span>
-              <a href="#" className="hover:underline">Privacy Policy</a>
-              <span>·</span>
-              <a href="#" className="hover:underline">Terms of Service</a>
-            </div>
-            <div className="flex items-center space-x-6">
-              <span className="flex items-center"><i className="fas fa-globe mr-1.5"></i> English (US)</span>
-              <span className="flex items-center font-bold text-slate-800">$ USD</span>
-            </div>
-          </div>
-        </div>
+      <footer className="border-t border-slate-200 py-8 text-center text-slate-400 text-sm">
+        <p>&copy; 2025 ParkShare_MVP_v3 · Created for Demo</p>
       </footer>
     </div>
   );
